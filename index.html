@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Food Match Challenge</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Trebuchet MS", Arial, sans-serif;
+    background: linear-gradient(135deg, #fff4d6, #dff7ff);
+    color: #263238;
+    min-height: 100vh;
+  }
+  .game {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .header {
+    background: white;
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.10);
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  h1 { margin: 0 0 6px; font-size: 34px; }
+  .subtitle { margin: 0; color: #607d8b; }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 15px;
+  }
+  .stat {
+    background: #f4f7f9;
+    border-radius: 14px;
+    padding: 9px 16px;
+    font-weight: bold;
+  }
+  .progress {
+    height: 12px;
+    background: #e5e7eb;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-top: 15px;
+  }
+  .progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #4caf50;
+    transition: width .3s;
+  }
+  .card {
+    background: white;
+    border-radius: 24px;
+    padding: 28px;
+    box-shadow: 0 8px 25px rgba(0,0,0,.10);
+  }
+  .question-number {
+    font-size: 16px;
+    font-weight: bold;
+    color: #ff7043;
+    margin-bottom: 8px;
+  }
+  .question {
+    font-size: 28px;
+    font-weight: bold;
+    line-height: 1.3;
+    margin-bottom: 22px;
+  }
+  .answers {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+  }
+  button.answer {
+    border: 3px solid #e7ebee;
+    background: #fff;
+    border-radius: 18px;
+    padding: 18px;
+    text-align: left;
+    font-size: 18px;
+    cursor: pointer;
+    transition: .2s;
+    min-height: 72px;
+  }
+  button.answer:hover {
+    transform: translateY(-3px);
+    border-color: #64b5f6;
+    background: #f3faff;
+  }
+  button.answer.correct {
+    border-color: #43a047;
+    background: #e8f5e9;
+  }
+  button.answer.wrong {
+    border-color: #e53935;
+    background: #ffebee;
+  }
+  .letter {
+    display: inline-flex;
+    width: 34px;
+    height: 34px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #eceff1;
+    margin-right: 8px;
+    font-weight: bold;
+  }
+  .feedback {
+    min-height: 45px;
+    margin-top: 18px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+  }
+  .next {
+    display: block;
+    margin: 5px auto 0;
+    border: 0;
+    border-radius: 15px;
+    padding: 13px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    background: #ff7043;
+    cursor: pointer;
+  }
+  .next:hover { filter: brightness(1.08); }
+  .hidden { display: none !important; }
+
+  .result {
+    text-align: center;
+  }
+  .trophy { font-size: 70px; }
+  .result h2 { font-size: 34px; margin: 5px; }
+  .score-big { font-size: 52px; font-weight: bold; color: #ff7043; }
+  .message {
+    font-size: 20px;
+    margin: 12px auto 22px;
+    max-width: 650px;
+  }
+  .restart {
+    border: 0;
+    border-radius: 16px;
+    padding: 15px 30px;
+    font-size: 19px;
+    font-weight: bold;
+    color: white;
+    background: #42a5f5;
+    cursor: pointer;
+  }
+  .hint {
+    text-align: center;
+    margin-top: 15px;
+    color: #78909c;
+    font-size: 14px;
+  }
+
+  @media (max-width: 700px) {
+    .answers { grid-template-columns: 1fr; }
+    .question { font-size: 23px; }
+    h1 { font-size: 28px; }
+    .card { padding: 20px; }
+  }
+</style>
+</head>
+
+<body>
+<div class="game">
+  <div class="header">
+    <h1>🍽️ Food Match Challenge</h1>
+    <p class="subtitle">Read the question and choose the best answer!</p>
+
+    <div class="stats">
+      <div class="stat">⭐ Score: <span id="score">0</span></div>
+      <div class="stat">🔥 Streak: <span id="streak">0</span></div>
+      <div class="stat">⏱️ Time: <span id="time">20</span>s</div>
+    </div>
+
+    <div class="progress">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+  </div>
+
+  <div class="card" id="quizCard">
+    <div class="question-number" id="questionNumber">Question 1 of 5</div>
+    <div class="question" id="question"></div>
+    <div class="answers" id="answers"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next hidden" id="nextBtn">Next ➜</button>
+    <div class="hint">💡 Tip: Look carefully at the question words: eat, drink, dessert, cheese, onions.</div>
+  </div>
+
+  <div class="card result hidden" id="resultCard">
+    <div class="trophy" id="trophy">🏆</div>
+    <h2>Challenge Complete!</h2>
+    <div class="score-big" id="finalScore">0 / 5</div>
+    <p class="message" id="resultMessage"></p>
+    <button class="restart" onclick="startGame()">🔄 Play Again</button>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "What would you like to eat?",
+    options: [
+      ["a", "No, there isn't."],
+      ["b", "I'd like an omelette."],
+      ["c", "Some water, please."],
+      ["d", "Yes, there are."],
+      ["e", "No, thanks."]
+    ],
+    answer: "b"
+  },
+  {
+    q: "What would you like to drink?",
+    options: [
+      ["a", "No, there isn't."],
+      ["b", "I'd like an omelette."],
+      ["c", "Some water, please."],
+      ["d", "Yes, there are."],
+      ["e", "No, thanks."]
+    ],
+    answer: "c"
+  },
+  {
+    q: "Would you like some dessert?",
+    options: [
+      ["a", "No, there isn't."],
+      ["b", "I'd like an omelette."],
+      ["c", "Some water, please."],
+      ["d", "Yes, there are."],
+      ["e", "No, thanks."]
+    ],
+    answer: "e"
+  },
+  {
+    q: "Is there any cheese in the fridge?",
+    options: [
+      ["a", "No, there isn't."],
+      ["b", "I'd like an omelette."],
+      ["c", "Some water, please."],
+      ["d", "Yes, there are."],
+      ["e", "No, thanks."]
+    ],
+    answer: "a"
+  },
+  {
+    q: "Are there any onions in your soup?",
+    options: [
+      ["a", "No, there isn't."],
+      ["b", "I'd like an omelette."],
+      ["c", "Some water, please."],
+      ["d", "Yes, there are."],
+      ["e", "No, thanks."]
+    ],
+    answer: "d"
+  }
+];
+
+let current = 0;
+let score = 0;
+let streak = 0;
+let timeLeft = 20;
+let timer = null;
+let answered = false;
+
+const questionEl = document.getElementById("question");
+const answersEl = document.getElementById("answers");
+const feedbackEl = document.getElementById("feedback");
+const nextBtn = document.getElementById("nextBtn");
+const scoreEl = document.getElementById("score");
+const streakEl = document.getElementById("streak");
+const timeEl = document.getElementById("time");
+const progressBar = document.getElementById("progressBar");
+
+function shuffle(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+
+function startGame() {
+  current = 0;
+  score = 0;
+  streak = 0;
+  document.getElementById("quizCard").classList.remove("hidden");
+  document.getElementById("resultCard").classList.add("hidden");
+  scoreEl.textContent = score;
+  streakEl.textContent = streak;
+  loadQuestion();
+}
+
+function loadQuestion() {
+  clearInterval(timer);
+  answered = false;
+  timeLeft = 20;
+  timeEl.textContent = timeLeft;
+
+  const item = questions[current];
+  document.getElementById("questionNumber").textContent =
+    `Question ${current + 1} of ${questions.length}`;
+  questionEl.textContent = item.q;
+
+  progressBar.style.width = `${(current / questions.length) * 100}%`;
+
+  answersEl.innerHTML = "";
+  feedbackEl.textContent = "";
+  nextBtn.classList.add("hidden");
+
+  const shuffled = shuffle(item.options);
+
+  shuffled.forEach(([letter, text]) => {
+    const btn = document.createElement("button");
+    btn.className = "answer";
+    btn.innerHTML = `<span class="letter">${letter.toUpperCase()}</span>${text}`;
+    btn.onclick = () => chooseAnswer(btn, letter);
+    answersEl.appendChild(btn);
+  });
+
+  timer = setInterval(() => {
+    timeLeft--;
+    timeEl.textContent = timeLeft;
+
+    if (timeLeft <= 0) {
+      clearInterval(timer);
+      chooseAnswer(null, null);
+    }
+  }, 1000);
+}
+
+function chooseAnswer(clickedButton, selected) {
+  if (answered) return;
+  answered = true;
+  clearInterval(timer);
+
+  const correct = questions[current].answer;
+  const buttons = [...answersEl.querySelectorAll(".answer")];
+
+  buttons.forEach(btn => {
+    const letter = btn.querySelector(".letter").textContent.toLowerCase();
+    if (letter === correct) btn.classList.add("correct");
+  });
+
+  if (selected === correct) {
+    if (clickedButton) clickedButton.classList.add("correct");
+    streak++;
+    const bonus = 10 + Math.max(0, timeLeft);
+    score += bonus;
+    feedbackEl.textContent = `🎉 Correct! +${bonus} points`;
+  } else {
+    if (clickedButton) clickedButton.classList.add("wrong");
+    streak = 0;
+    feedbackEl.textContent = selected === null
+      ? `⏰ Time's up! The answer is ${correct.toUpperCase()}.`
+      : `❌ Not quite! The correct answer is ${correct.toUpperCase()}.`;
+  }
+
+  scoreEl.textContent = score;
+  streakEl.textContent = streak;
+
+  buttons.forEach(btn => btn.disabled = true);
+  nextBtn.classList.remove("hidden");
+  nextBtn.textContent = current === questions.length - 1
+    ? "See My Result 🏆"
+    : "Next ➜";
+}
+
+nextBtn.addEventListener("click", () => {
+  current++;
+  if (current >= questions.length) {
+    showResult();
+  } else {
+    loadQuestion();
+  }
+});
+
+function showResult() {
+  clearInterval(timer);
+  progressBar.style.width = "100%";
+  document.getElementById("quizCard").classList.add("hidden");
+  document.getElementById("resultCard").classList.remove("hidden");
+
+  const correctCount = Math.round(score / 10); // used only for a simple result message
+  document.getElementById("finalScore").textContent = `${score} points`;
+
+  let trophy = "🌟";
+  let message = "Good try! Play again and beat your score.";
+
+  if (score >= 100) {
+    trophy = "🏆";
+    message = "Excellent! You are a Food Match Master!";
+  } else if (score >= 70) {
+    trophy = "🥇";
+    message = "Great job! You matched most of the answers!";
+  } else if (score >= 40) {
+    trophy = "🥈";
+    message = "Nice work! Keep practising these useful sentences.";
+  }
+
+  document.getElementById("trophy").textContent = trophy;
+  document.getElementById("resultMessage").textContent = message;
+}
+
+startGame();
+</script>
+</body>
+</html>
